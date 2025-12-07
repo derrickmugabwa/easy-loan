@@ -1,10 +1,19 @@
+"use client"
+
+import { useEffect } from "react";
 import Image from "next/image";
 import { LoanForm } from "@/components/loan-form";
 import { ToastNotificationSystem } from "@/components/toast-notification-system";
 import { DottedSurface } from "@/components/ui/dotted-surface";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { clearSessionData } from "@/lib/session-storage";
 
 export default function Home() {
+  // Clear session storage when returning to homepage
+  useEffect(() => {
+    clearSessionData();
+  }, []);
+
   return (
     <div className="relative min-h-screen bg-white dark:bg-gray-950">
       <DottedSurface className="opacity-20" />

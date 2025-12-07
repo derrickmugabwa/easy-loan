@@ -17,14 +17,16 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
 		particles: THREE.Points[];
 		animationId: number;
 		count: number;
+		isPaused: boolean;
 	} | null>(null);
 
 	useEffect(() => {
 		if (!containerRef.current) return;
 
+		// Reduced particle count for better performance
 		const SEPARATION = 150;
-		const AMOUNTX = 40;
-		const AMOUNTY = 60;
+		const AMOUNTX = 25; // Reduced from 40
+		const AMOUNTY = 35; // Reduced from 60
 
 		// Scene setup
 		const scene = new THREE.Scene();
@@ -92,10 +94,25 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
 
 		let count = 0;
 		let animationId = 0;
+		let isPaused = false;
+		let lastFrameTime = performance.now();
+		const targetFPS = 30; // Throttle to 30 FPS for better performance
+		const frameInterval = 1000 / targetFPS;
 
-		// Animation function
+		// Animation function with throttling
 		const animate = () => {
 			animationId = requestAnimationFrame(animate);
+
+			// Skip rendering if paused
+			if (isPaused) return;
+
+			// Throttle to target FPS
+			const currentTime = performance.now();
+			const elapsed = currentTime - lastFrameTime;
+
+			if (elapsed < frameInterval) return;
+
+			lastFrameTime = currentTime - (elapsed % frameInterval);
 
 			const positionAttribute = geometry.attributes.position;
 			const positions = positionAttribute.array as Float32Array;
@@ -116,15 +133,6 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
 
 			positionAttribute.needsUpdate = true;
 
-			// Update point sizes based on wave
-			const customMaterial = material as THREE.PointsMaterial & {
-				uniforms?: any;
-			};
-			if (!customMaterial.uniforms) {
-				// For dynamic size changes, we'd need a custom shader
-				// For now, keeping constant size for performance
-			}
-
 			renderer.render(scene, camera);
 			count += 0.1;
 		};
@@ -136,7 +144,16 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
 			renderer.setSize(window.innerWidth, window.innerHeight);
 		};
 
+		// Handle visibility change - pause animation when tab is hidden
+		const handleVisibilityChange = () => {
+			isPaused = document.hidden;
+			if (sceneRef.current) {
+				sceneRef.current.isPaused = isPaused;
+			}
+		};
+
 		window.addEventListener('resize', handleResize);
+		document.addEventListener('visibilitychange', handleVisibilityChange);
 
 		// Start animation
 		animate();
@@ -149,11 +166,13 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
 			particles: [points],
 			animationId,
 			count,
+			isPaused,
 		};
 
 		// Cleanup function
 		return () => {
 			window.removeEventListener('resize', handleResize);
+			document.removeEventListener('visibilitychange', handleVisibilityChange);
 
 			if (sceneRef.current) {
 				cancelAnimationFrame(sceneRef.current.animationId);
@@ -171,12 +190,11 @@ export function DottedSurface({ className, ...props }: DottedSurfaceProps) {
 				});
 
 				sceneRef.current.renderer.dispose();
-
-				if (containerRef.current && sceneRef.current.renderer.domElement) {
-					containerRef.current.removeChild(
-						sceneRef.current.renderer.domElement,
-					);
+				if (containerRef.current?.contains(sceneRef.current.renderer.domElement)) {
+					containerRef.current.removeChild(sceneRef.current.renderer.domElement);
 				}
+
+				sceneRef.current = null;
 			}
 		};
 	}, [theme]);

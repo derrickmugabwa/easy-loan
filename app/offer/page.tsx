@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { getOfferData, getApplicationData, clearSessionData } from "@/lib/session-storage"
 import { LoanOffer, LoanApplication } from "@/lib/types"
@@ -29,6 +29,7 @@ export default function OfferPage() {
     const [processingPayment, setProcessingPayment] = useState(false)
     const [showSuccessDialog, setShowSuccessDialog] = useState(false)
     const [paymentDetails, setPaymentDetails] = useState<any>(null)
+    const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -44,7 +45,14 @@ export default function OfferPage() {
             setLoading(false)
         }, 1000)
 
-        return () => clearTimeout(timer)
+        return () => {
+            clearTimeout(timer)
+            // Cleanup polling interval on unmount
+            if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current)
+                pollIntervalRef.current = null
+            }
+        }
     }, [router])
 
     const handlePayment = async () => {
@@ -100,6 +108,11 @@ export default function OfferPage() {
         let attempts = 0
         const maxAttempts = 30 // Poll for 60 seconds (30 * 2s)
 
+        // Clear any existing poll interval
+        if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current)
+        }
+
         const poll = setInterval(async () => {
             attempts++
 
@@ -108,7 +121,8 @@ export default function OfferPage() {
                 const data = await response.json()
 
                 if (data.status === 'success') {
-                    clearInterval(poll)
+                    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+                    pollIntervalRef.current = null
                     setProcessingPayment(false)
                     
                     // Store payment details and show success dialog
@@ -120,14 +134,16 @@ export default function OfferPage() {
                         duration: 5000,
                     })
                 } else if (data.status === 'failed') {
-                    clearInterval(poll)
+                    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+                    pollIntervalRef.current = null
                     setProcessingPayment(false)
                     toast.error('Payment failed', {
                         description: data.resultDesc || 'The payment was not completed. Please try again.',
                         duration: 8000,
                     })
                 } else if (attempts >= maxAttempts) {
-                    clearInterval(poll)
+                    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+                    pollIntervalRef.current = null
                     setProcessingPayment(false)
                     toast.warning('Payment timeout', {
                         description: 'Please check your M-PESA messages to confirm if payment was successful.',
@@ -138,6 +154,8 @@ export default function OfferPage() {
                 console.error('Polling error:', error)
             }
         }, 2000) // Poll every 2 seconds
+
+        pollIntervalRef.current = poll
     }
 
     if (loading) {
