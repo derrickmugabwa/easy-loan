@@ -22,7 +22,7 @@ export const loanApplicationSchema = z.object({
     fullName: nameSchema,
     phoneNumber: phoneSchema,
     nationalId: nationalIdSchema,
-    loanType: z.enum(["Emergency", "Personal", "Business", "Salary"])
+    loanType: z.enum(["Emergency", "Education", "Car", "Business"])
 })
 
 export type LoanApplicationFormData = z.infer<typeof loanApplicationSchema>

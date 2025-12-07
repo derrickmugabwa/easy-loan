@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation"
 import { LoanType, LOAN_TYPES } from "@/lib/types"
 import { loanApplicationSchema } from "@/lib/validators"
 import { saveApplicationData, saveOfferData } from "@/lib/session-storage"
-import { Loader2, ChevronDown } from "lucide-react"
 import { toast } from "sonner"
+import { Loader2, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { TermsModal } from "./terms-modal"
+import { PrivacyModal } from "./privacy-modal"
 
 export function LoanForm() {
     const router = useRouter()
@@ -19,6 +21,8 @@ export function LoanForm() {
         loanType: "" as LoanType | ""
     })
     const [errors, setErrors] = useState<Record<string, string>>({})
+    const [showTermsModal, setShowTermsModal] = useState(false)
+    const [showPrivacyModal, setShowPrivacyModal] = useState(false)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -191,6 +195,41 @@ export function LoanForm() {
                     "Check Eligibility"
                 )}
             </button>
+        
+            {/* Legal Text */}
+            <div className="text-center mb-4 md:mb-6">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                    By proceeding, you agree to our{" "}
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.preventDefault()
+                            setShowTermsModal(true)
+                        }}
+                        className="text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 font-medium transition-colors underline-offset-2 hover:underline"
+                    >
+                        Terms & Conditions
+                    </button>{" "}
+                    and{" "}
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.preventDefault()
+                            setShowPrivacyModal(true)
+                        }}
+                        className="text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 font-medium transition-colors underline-offset-2 hover:underline"
+                    >
+                        Privacy Policy
+                    </button>
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    No CRB Check. No Guarantors . Disbursed to MPESA . No Paperwork
+                </p>
+            </div>
+
+            {/* Modals */}
+            <TermsModal open={showTermsModal} onOpenChange={setShowTermsModal} />
+            <PrivacyModal open={showPrivacyModal} onOpenChange={setShowPrivacyModal} />
         </form>
     )
 }

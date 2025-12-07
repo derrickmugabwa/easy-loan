@@ -1,9 +1,12 @@
 "use client"
 
+import { useState } from "react"
 import { CheckCircle, Calendar, Percent, Banknote, FileText, User, Phone, Briefcase, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { LoanOffer, LoanApplication } from "@/lib/types"
+import { TermsModal } from "./terms-modal"
+import { PrivacyModal } from "./privacy-modal"
 
 interface LoanApprovalPageProps {
   offer: LoanOffer
@@ -14,6 +17,8 @@ interface LoanApprovalPageProps {
 
 export function LoanApprovalPage({ offer, applicant, onPayment, processingPayment }: LoanApprovalPageProps) {
   const firstName = applicant.fullName.split(' ')[0]
+  const [showTermsModal, setShowTermsModal] = useState(false)
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false)
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 flex items-center justify-center px-4 py-6 md:py-12">
@@ -151,18 +156,39 @@ export function LoanApprovalPage({ offer, applicant, onPayment, processingPaymen
         </div>
 
         {/* Legal Text */}
-        <div className="text-center mb-4 md:mb-6">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            By proceeding, you agree to our{" "}
-            <a href="#" className="text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 font-medium transition-colors underline-offset-2 hover:underline">
-              Terms & Conditions
-            </a>{" "}
-            and{" "}
-            <a href="#" className="text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 font-medium transition-colors underline-offset-2 hover:underline">
-              Privacy Policy
-            </a>
-          </p>
-        </div>
+            <div className="text-center mb-4 md:mb-6">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                    By proceeding, you agree to our{" "}
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.preventDefault()
+                            setShowTermsModal(true)
+                        }}
+                        className="text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 font-medium transition-colors underline-offset-2 hover:underline"
+                    >
+                        Terms & Conditions
+                    </button>{" "}
+                    and{" "}
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.preventDefault()
+                            setShowPrivacyModal(true)
+                        }}
+                        className="text-green-600 dark:text-green-500 hover:text-green-700 dark:hover:text-green-400 font-medium transition-colors underline-offset-2 hover:underline"
+                    >
+                        Privacy Policy
+                    </button>
+                </p>
+                {/* <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    No CRB Check. No Guarantors . Disbursed to MPESA . No Paperwork
+                </p> */}
+            </div>
+
+        {/* Modals */}
+                    <TermsModal open={showTermsModal} onOpenChange={setShowTermsModal} />
+                    <PrivacyModal open={showPrivacyModal} onOpenChange={setShowPrivacyModal} />
 
         {/* CTA Section */}
         <div className="space-y-2">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { getOfferData, getApplicationData } from "@/lib/session-storage"
+import { getOfferData, getApplicationData, clearSessionData } from "@/lib/session-storage"
 import { LoanOffer, LoanApplication } from "@/lib/types"
 import { LoanApprovalPage } from "@/components/loan-approval-page"
 import {
@@ -227,6 +227,7 @@ export default function OfferPage() {
                     <Button
                         onClick={() => {
                             setShowSuccessDialog(false)
+                            clearSessionData() // Clear session data before redirecting
                             router.push('/')
                         }}
                         className="w-full h-11 bg-gray-900 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-gray-200 text-white dark:text-gray-900 font-semibold rounded-full transition-all duration-200"
