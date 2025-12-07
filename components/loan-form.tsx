@@ -30,6 +30,7 @@ export function LoanForm() {
         setLoading(true)
 
         try {
+            // Client-side validation
             const validatedData = loanApplicationSchema.parse(formData)
             saveApplicationData(validatedData)
 
@@ -41,6 +42,43 @@ export function LoanForm() {
 
             const result = await response.json()
 
+            // Handle API errors
+            if (!response.ok) {
+                if (result.details) {
+                    // Server-side validation errors
+                    const fieldErrors: Record<string, string> = {}
+                    const uniqueMessages = new Set<string>()
+                    
+                    result.details.forEach((err: any) => {
+                        if (err.path && err.path[0]) {
+                            // Store only the first error for each field
+                            if (!fieldErrors[err.path[0]]) {
+                                fieldErrors[err.path[0]] = err.message
+                            }
+                            uniqueMessages.add(err.message)
+                        }
+                    })
+                    
+                    setErrors(fieldErrors)
+                    
+                    const errorArray = Array.from(uniqueMessages)
+                    if (errorArray.length > 0) {
+                        // Show each unique error message as a separate toast
+                        errorArray.forEach((message, index) => {
+                            setTimeout(() => {
+                                toast.error(message, { duration: 4000 })
+                            }, index * 100) // Stagger toasts by 100ms
+                        })
+                    } else {
+                        toast.error("Validation failed")
+                    }
+                } else {
+                    toast.error(result.error || "Something went wrong. Please try again.")
+                }
+                setLoading(false)
+                return
+            }
+
             if (result.approved) {
                 saveOfferData(result)
                 router.push("/offer")
@@ -48,17 +86,70 @@ export function LoanForm() {
                 router.push("/rejected")
             }
         } catch (error: any) {
-            if (error.errors) {
+            console.log("Form submission error:", error)
+            
+            // Client-side validation errors (Zod)
+            if (error.errors && Array.isArray(error.errors)) {
                 const fieldErrors: Record<string, string> = {}
+                const uniqueMessages = new Set<string>()
+                
                 error.errors.forEach((err: any) => {
-                    if (err.path) {
-                        fieldErrors[err.path[0]] = err.message
+                    if (err.path && err.path.length > 0) {
+                        const fieldName = err.path[0]
+                        // Store only the first error for each field
+                        if (!fieldErrors[fieldName]) {
+                            fieldErrors[fieldName] = err.message
+                        }
+                        uniqueMessages.add(err.message)
                     }
                 })
+                
                 setErrors(fieldErrors)
-                toast.error("Please check the form for errors")
+                
+                // Show each unique error message as a separate toast
+                const errorArray = Array.from(uniqueMessages)
+                if (errorArray.length > 0) {
+                    errorArray.forEach((message, index) => {
+                        setTimeout(() => {
+                            toast.error(message, { duration: 4000 })
+                        }, index * 100) // Stagger toasts by 100ms
+                    })
+                } else {
+                    toast.error("Please check the form for errors")
+                }
+            } else if (error.name === 'ZodError') {
+                // Handle ZodError specifically
+                const issues = error.issues || []
+                const fieldErrors: Record<string, string> = {}
+                const uniqueMessages = new Set<string>()
+                
+                issues.forEach((issue: any) => {
+                    if (issue.path && issue.path.length > 0) {
+                        const fieldName = issue.path[0]
+                        if (!fieldErrors[fieldName]) {
+                            fieldErrors[fieldName] = issue.message
+                        }
+                        uniqueMessages.add(issue.message)
+                    }
+                })
+                
+                setErrors(fieldErrors)
+                
+                // Show each unique error message as a separate toast
+                const errorArray = Array.from(uniqueMessages)
+                if (errorArray.length > 0) {
+                    errorArray.forEach((message, index) => {
+                        setTimeout(() => {
+                            toast.error(message, { duration: 4000 })
+                        }, index * 100) // Stagger toasts by 100ms
+                    })
+                } else {
+                    toast.error("Please check the form for errors")
+                }
             } else {
-                toast.error("Something went wrong. Please try again.")
+                // Network or other errors
+                console.error("Unexpected error:", error)
+                toast.error(error.message || "Something went wrong. Please try again.")
             }
             setLoading(false)
         }
@@ -127,9 +218,15 @@ export function LoanForm() {
                 <input
                     id="nationalId"
                     type="text"
+                    inputMode="numeric"
+                    pattern="\d*"
+                    maxLength={8}
                     placeholder="e.g. 12345678"
                     value={formData.nationalId}
-                    onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })}
+                    onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 8)
+                        setFormData({ ...formData, nationalId: value })
+                    }}
                     disabled={loading}
                     required
                     className={inputClass(!!errors.nationalId)}

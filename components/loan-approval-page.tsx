@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, memo } from "react"
 import { CheckCircle, Calendar, Percent, Banknote, FileText, User, Phone, Briefcase, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -15,8 +15,8 @@ interface LoanApprovalPageProps {
   processingPayment: boolean
 }
 
-export function LoanApprovalPage({ offer, applicant, onPayment, processingPayment }: LoanApprovalPageProps) {
-  const firstName = applicant.fullName.split(' ')[0]
+export const LoanApprovalPage = memo(function LoanApprovalPage({ offer, applicant, onPayment, processingPayment }: LoanApprovalPageProps) {
+  const firstName = useMemo(() => applicant.fullName.split(' ')[0], [applicant.fullName])
   const [showTermsModal, setShowTermsModal] = useState(false)
   const [showPrivacyModal, setShowPrivacyModal] = useState(false)
 
@@ -40,7 +40,7 @@ export function LoanApprovalPage({ offer, applicant, onPayment, processingPaymen
         {/* Main Content Grid */}
         <div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
           {/* Loan Offer Card - Left Column */}
-          <Card className="border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 bg-white dark:bg-gray-900">
+          <Card className="border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm bg-white dark:bg-gray-900">
             <CardHeader className="pb-4">
               <div className="flex items-start gap-2 mb-2">
                 <div className="w-8 h-8 rounded-lg bg-green-50 dark:bg-green-950 flex items-center justify-center flex-shrink-0">
@@ -62,7 +62,7 @@ export function LoanApprovalPage({ offer, applicant, onPayment, processingPaymen
               </div>
 
               <div className="grid grid-cols-3 gap-2">
-                <div className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
+                <div className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-center mb-1">
                     <Calendar className="w-3 h-3 text-gray-600 dark:text-gray-400" />
                   </div>
@@ -70,7 +70,7 @@ export function LoanApprovalPage({ offer, applicant, onPayment, processingPaymen
                   <p className="text-xs text-gray-500 dark:text-gray-400 text-center">Days</p>
                 </div>
 
-                <div className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
+                <div className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-center mb-1">
                     <Percent className="w-3 h-3 text-gray-600 dark:text-gray-400" />
                   </div>
@@ -78,7 +78,7 @@ export function LoanApprovalPage({ offer, applicant, onPayment, processingPaymen
                   <p className="text-xs text-gray-500 dark:text-gray-400 text-center">Interest</p>
                 </div>
 
-                <div className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
+                <div className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-center mb-1">
                     <Banknote className="w-3 h-3 text-gray-600 dark:text-gray-400" />
                   </div>
@@ -90,7 +90,7 @@ export function LoanApprovalPage({ offer, applicant, onPayment, processingPaymen
           </Card>
 
           {/* Application Details Card - Right Column */}
-          <Card className="border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 bg-white dark:bg-gray-900">
+          <Card className="border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm bg-white dark:bg-gray-900">
             <CardHeader className="pb-4">
               <div className="flex items-start gap-2 mb-2">
                 <div className="w-8 h-8 rounded-lg bg-gray-50 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
@@ -195,7 +195,7 @@ export function LoanApprovalPage({ offer, applicant, onPayment, processingPaymen
           <Button 
             onClick={onPayment}
             disabled={processingPayment}
-            className="w-full bg-gray-900 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-gray-200 text-white dark:text-gray-900 font-semibold h-12 text-base rounded-full transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50"
+            className="w-full bg-gray-900 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-gray-200 text-white dark:text-gray-900 font-semibold h-12 text-base rounded-full shadow-sm disabled:opacity-50"
           >
             {processingPayment ? (
               <>
@@ -217,4 +217,4 @@ export function LoanApprovalPage({ offer, applicant, onPayment, processingPaymen
       </div>
     </div>
   )
-}
+})

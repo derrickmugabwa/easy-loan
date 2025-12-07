@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { getOfferData, getApplicationData, clearSessionData } from "@/lib/session-storage"
 import { LoanOffer, LoanApplication } from "@/lib/types"
@@ -32,6 +32,7 @@ export default function OfferPage() {
     const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
     useEffect(() => {
+        // Reduced delay for faster page load
         const timer = setTimeout(() => {
             const offerData = getOfferData()
             const applicantData = getApplicationData()
@@ -43,7 +44,7 @@ export default function OfferPage() {
             setOffer(offerData)
             setApplicant(applicantData)
             setLoading(false)
-        }, 1000)
+        }, 300)
 
         return () => {
             clearTimeout(timer)
@@ -55,56 +56,7 @@ export default function OfferPage() {
         }
     }, [router])
 
-    const handlePayment = async () => {
-        if (!offer || !applicant) return
-
-        setProcessingPayment(true)
-
-        try {
-            // Initiate STK Push
-            const response = await fetch('/api/mpesa/stk-push', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    phoneNumber: applicant.phoneNumber,
-                    amount: offer.verificationFee,
-                    accountReference: offer.sessionId || 'LOAN-' + Date.now(),
-                    transactionDesc: `Verification Fee - ${offer.loanType} Loan`
-                })
-            })
-
-            const data = await response.json()
-
-            if (data.success) {
-                // STK push sent successfully
-                toast.success('Payment request sent!', {
-                    description: `Please check your phone (${applicant.phoneNumber}) and enter your M-PESA PIN to complete the payment.`,
-                    duration: 8000,
-                })
-                
-                // Poll for payment status
-                pollPaymentStatus(data.checkoutRequestId)
-            } else {
-                toast.error('Payment failed', {
-                    description: data.error || 'Unable to initiate payment. Please try again.',
-                    duration: 6000,
-                })
-                setProcessingPayment(false)
-            }
-
-        } catch (error) {
-            console.error('Payment error:', error)
-            toast.error('Payment failed', {
-                description: 'Failed to initiate payment. Please check your connection and try again.',
-                duration: 6000,
-            })
-            setProcessingPayment(false)
-        }
-    }
-
-    const pollPaymentStatus = async (checkoutRequestId: string) => {
+    const pollPaymentStatus = useCallback(async (checkoutRequestId: string) => {
         let attempts = 0
         const maxAttempts = 30 // Poll for 60 seconds (30 * 2s)
 
@@ -156,7 +108,56 @@ export default function OfferPage() {
         }, 2000) // Poll every 2 seconds
 
         pollIntervalRef.current = poll
-    }
+    }, [])
+
+    const handlePayment = useCallback(async () => {
+        if (!offer || !applicant) return
+
+        setProcessingPayment(true)
+
+        try {
+            // Initiate STK Push
+            const response = await fetch('/api/mpesa/stk-push', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    phoneNumber: applicant.phoneNumber,
+                    amount: offer.verificationFee,
+                    accountReference: offer.sessionId || 'LOAN-' + Date.now(),
+                    transactionDesc: `Verification Fee - ${offer.loanType} Loan`
+                })
+            })
+
+            const data = await response.json()
+
+            if (data.success) {
+                // STK push sent successfully
+                toast.success('Payment request sent!', {
+                    description: `Please check your phone (${applicant.phoneNumber}) and enter your M-PESA PIN to complete the payment.`,
+                    duration: 8000,
+                })
+                
+                // Poll for payment status
+                pollPaymentStatus(data.checkoutRequestId)
+            } else {
+                toast.error('Payment failed', {
+                    description: data.error || 'Unable to initiate payment. Please try again.',
+                    duration: 6000,
+                })
+                setProcessingPayment(false)
+            }
+
+        } catch (error) {
+            console.error('Payment error:', error)
+            toast.error('Payment failed', {
+                description: 'Failed to initiate payment. Please check your connection and try again.',
+                duration: 6000,
+            })
+            setProcessingPayment(false)
+        }
+    }, [offer, applicant, pollPaymentStatus])
 
     if (loading) {
         return (
