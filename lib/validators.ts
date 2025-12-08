@@ -5,9 +5,9 @@ export const phoneSchema = z.string()
     .min(10, "Phone number must be at least 10 digits")
     .regex(/^(\+254|0)[17]\d{8}$/, "Invalid Kenyan phone number format")
 
-// National ID validation (exactly 8 digits)
+// National ID validation (7 or 8 digits)
 export const nationalIdSchema = z.string()
-    .regex(/^\d{8}$/, "National ID must be exactly 8 digits")
+    .regex(/^\d{7,8}$/, "National ID must be 7 or 8 digits")
 
 // Full name validation
 export const nameSchema = z.string()
